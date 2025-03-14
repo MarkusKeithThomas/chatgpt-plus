@@ -15,7 +15,12 @@ jobs:
 
       - name: Đọc Prompt từ GitHub
         run: |
+          if [[ ! -f prompts/article_prompt.txt ]]; then
+            echo "Lỗi: Không tìm thấy file prompts/article_prompt.txt"
+            exit 1
+          fi
           PROMPT=$(cat prompts/article_prompt.txt | tr '\n' ' ')
+          echo "Prompt được gửi: $PROMPT"
           echo "prompt=$PROMPT" >> "$GITHUB_ENV"
 
       - name: Gọi ChatGPT API
@@ -25,17 +30,20 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{
             "model": "gpt-4",
-            "messages": [{"role": "system", "content": "${{ env.prompt }}"}],
+            "messages": [{"role": "system", "content": "'"${{ env.prompt }}"'"}],
             "max_tokens": 1500
-          }' | jq -r '.choices[0].message.content')
+          }' | jq -r '.choices[0].message.content // "Lỗi: Không có phản hồi từ API"')
 
+          echo "API Response: $RESPONSE"
           echo "response=$RESPONSE" >> "$GITHUB_ENV"
 
       - name: Lưu bài viết vào Markdown
         run: |
           mkdir -p articles  # Đảm bảo thư mục tồn tại
-          echo "# Đèn năng lượng mặt trời - Bài Viết ChatGPT" > articles/article_$(date '+%Y-%m-%d').md
-          echo "${{ env.response }}" >> articles/article_$(date '+%Y-%m-%d').md
+          FILE_NAME="articles/article_$(date '+%Y-%m-%d').md"
+          echo "# Đèn năng lượng mặt trời - Bài Viết ChatGPT" > $FILE_NAME
+          echo "${{ env.response }}" >> $FILE_NAME
+          cat $FILE_NAME  # Hiển thị nội dung file trong log
 
       - name: Commit và Push bài viết
         env:
@@ -45,5 +53,5 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git add articles/
-          git commit -m "Cập nhật bài viết tự động ngày $(date '+%Y-%m-%d')" || exit 0
-          git push origin HEAD:main
+          git commit -m "Cập nhật bài viết tự động ngày $(date '+%Y-%m-%d')" || echo "Không có thay đổi để commit"
+          git push origin HEAD:main || echo "Không có thay đổi để push"
