@@ -63,7 +63,7 @@ jobs:
           '{
             model: $model,
             messages: [{role: "system", content: $content}],
-            max_tokens: 1500
+            max_tokens: 500
           }')
 
           RESPONSE=$(echo "$JSON_DATA" | curl -s -X POST "https://api.openai.com/v1/chat/completions" \
