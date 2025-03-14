@@ -17,9 +17,11 @@ jobs:
 
       - name: Kiểm tra API Key
         run: |
-          echo "API Key bắt đầu bằng: ${OPENAI_API_KEY:0:5}..."
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
+            echo "❌ Lỗi: API Key chưa được thiết lập trong GitHub Secrets!"
+            exit 1
+          fi
+          echo "✅ API Key đã được thiết lập."
 
       - name: Kiểm tra file prompt có tồn tại
         run: |
@@ -41,13 +43,15 @@ jobs:
 
       - name: Kiểm tra JSON trước khi gửi API
         run: |
-          jq -n --arg model "gpt-4" \
+          JSON_DATA=$(jq -n --arg model "gpt-4" \
           --arg content "${{ env.prompt }}" \
           '{
             model: $model,
             messages: [{role: "system", content: $content}],
             max_tokens: 1500
-          }'
+          }')
+          echo "✅ JSON hợp lệ:"
+          echo "$JSON_DATA"
 
       - name: Gọi ChatGPT API
         run: |
