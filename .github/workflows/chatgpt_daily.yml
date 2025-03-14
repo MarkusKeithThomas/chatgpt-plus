@@ -33,6 +33,7 @@ jobs:
 
       - name: Lưu bài viết vào Markdown
         run: |
+          mkdir -p articles  # Đảm bảo thư mục tồn tại
           echo "# Đèn năng lượng mặt trời - Bài Viết ChatGPT" > articles/article_$(date '+%Y-%m-%d').md
           echo "${{ env.response }}" >> articles/article_$(date '+%Y-%m-%d').md
 
