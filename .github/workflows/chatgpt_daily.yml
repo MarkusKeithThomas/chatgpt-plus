@@ -15,6 +15,9 @@ jobs:
         with:
           fetch-depth: 1  # Đảm bảo tải toàn bộ repo
 
+      - name: Kiểm tra API Key
+        run: echo "API Key bắt đầu bằng: $(echo ${{ secrets.OPENAI_API_KEY }} | cut -c1-5)..."
+
       - name: Kiểm tra file prompt có tồn tại
         run: |
           if [[ ! -f prompts/article_prompt.txt ]]; then
@@ -43,11 +46,14 @@ jobs:
           RESPONSE=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
           -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
           -H "Content-Type: application/json" \
-          -d '{
+          -d @- <<EOF
+          {
             "model": "gpt-4",
-            "messages": [{"role": "system", "content": "'"${{ env.prompt }}"'"}],
+            "messages": [{"role": "system", "content": "${{ env.prompt }}"}],
             "max_tokens": 1500
-          }')
+          }
+          EOF
+          )
 
           echo "API Response: $RESPONSE"
           PARSED_RESPONSE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "Lỗi từ API: Không có phản hồi hợp lệ"')
