@@ -16,7 +16,10 @@ jobs:
           fetch-depth: 1  # Đảm bảo tải toàn bộ repo
 
       - name: Kiểm tra API Key
-        run: echo "API Key bắt đầu bằng: $(echo ${{ secrets.OPENAI_API_KEY }} | cut -c1-5)..."
+        run: |
+          echo "API Key bắt đầu bằng: ${OPENAI_API_KEY:0:5}..."
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Kiểm tra file prompt có tồn tại
         run: |
@@ -25,15 +28,6 @@ jobs:
             exit 1
           fi
           echo "✅ File prompts/article_prompt.txt đã tồn tại."
-
-      - name: Kiểm tra nội dung file prompt
-        run: |
-          PROMPT_CONTENT=$(cat prompts/article_prompt.txt)
-          if [[ -z "$PROMPT_CONTENT" ]]; then
-            echo "❌ Lỗi: File prompt trống!"
-            exit 1
-          fi
-          echo "✅ Nội dung Prompt: $PROMPT_CONTENT"
 
       - name: Đọc Prompt từ GitHub
         run: |
