@@ -1,0 +1,47 @@
+name: Generate ChatGPT Article Daily
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Chạy vào 8:00 sáng mỗi ngày
+  workflow_dispatch:  # Cho phép chạy thủ công
+
+jobs:
+  generate_article:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Lấy code từ GitHub
+        uses: actions/checkout@v3
+
+      - name: Đọc Prompt từ GitHub
+        id: read_prompt
+        run: |
+          PROMPT=$(cat prompts/article_prompt.txt)
+          echo "::set-output name=prompt::$PROMPT"
+
+      - name: Gọi ChatGPT API
+        id: chatgpt
+        run: |
+          RESPONSE=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
+          -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "model": "gpt-4",
+            "messages": [{"role": "system", "content": "${{ steps.read_prompt.outputs.prompt }}"}],
+            "max_tokens": 1500
+          }' | jq -r '.choices[0].message.content')
+
+          echo "::set-output name=response::$RESPONSE"
+
+      - name: Lưu bài viết vào Markdown
+        run: |
+          echo "# Đèn năng lượng mặt trời - Bài Viết ChatGPT" > articles/article_$(date '+%Y-%m-%d').md
+          echo "${{ steps.chatgpt.outputs.response }}" >> articles/article_$(date '+%Y-%m-%d').md
+
+      - name: Commit và Push bài viết
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add articles/
+          git commit -m "Cập nhật bài viết tự động ngày $(date '+%Y-%m-%d')"
+          git push
