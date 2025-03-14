@@ -12,15 +12,30 @@ jobs:
     steps:
       - name: Lấy code từ GitHub
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 1  # Đảm bảo tải toàn bộ repo
+
+      - name: Kiểm tra file prompt có tồn tại
+        run: |
+          if [[ ! -f prompts/article_prompt.txt ]]; then
+            echo "❌ Lỗi: File prompts/article_prompt.txt không tồn tại!"
+            exit 1
+          fi
+          echo "✅ File prompts/article_prompt.txt đã tồn tại."
+
+      - name: Kiểm tra nội dung file prompt
+        run: |
+          PROMPT_CONTENT=$(cat prompts/article_prompt.txt)
+          if [[ -z "$PROMPT_CONTENT" ]]; then
+            echo "❌ Lỗi: File prompt trống!"
+            exit 1
+          fi
+          echo "✅ Nội dung Prompt: $PROMPT_CONTENT"
 
       - name: Đọc Prompt từ GitHub
         run: |
-          if [[ ! -f prompts/article_prompt.txt ]]; then
-            echo "Lỗi: Không tìm thấy file prompts/article_prompt.txt"
-            exit 1
-          fi
-          PROMPT=$(cat prompts/article_prompt.txt | tr '\n' ' ')
-          echo "Prompt được gửi: $PROMPT"
+          PROMPT=$(cat prompts/article_prompt.txt | tr '\n' ' ' | tr -d '\r')
+          echo "Prompt được gửi đi: $PROMPT"
           echo "prompt=$PROMPT" >> "$GITHUB_ENV"
 
       - name: Gọi ChatGPT API
@@ -32,10 +47,11 @@ jobs:
             "model": "gpt-4",
             "messages": [{"role": "system", "content": "'"${{ env.prompt }}"'"}],
             "max_tokens": 1500
-          }' | jq -r '.choices[0].message.content // "Lỗi: Không có phản hồi từ API"')
+          }')
 
           echo "API Response: $RESPONSE"
-          echo "response=$RESPONSE" >> "$GITHUB_ENV"
+          PARSED_RESPONSE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "Lỗi từ API: Không có phản hồi hợp lệ"')
+          echo "response=$PARSED_RESPONSE" >> "$GITHUB_ENV"
 
       - name: Lưu bài viết vào Markdown
         run: |
