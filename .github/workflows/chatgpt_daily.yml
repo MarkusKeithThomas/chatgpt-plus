@@ -15,7 +15,8 @@ jobs:
 
       - name: Đọc Prompt từ GitHub
         run: |
-          echo "prompt=$(cat prompts/article_prompt.txt)" >> "$GITHUB_ENV"
+          PROMPT=$(cat prompts/article_prompt.txt | tr '\n' ' ')
+          echo "prompt=$PROMPT" >> "$GITHUB_ENV"
 
       - name: Gọi ChatGPT API
         run: |
