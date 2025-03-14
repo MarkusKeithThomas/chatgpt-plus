@@ -43,26 +43,30 @@ jobs:
 
       - name: Kiểm tra JSON trước khi gửi API
         run: |
-          JSON_DATA=$(jq -n --arg model "gpt-4" \
-          --arg content "${{ env.prompt }}" \
+          JSON_DATA=$(jq -n \
+          --arg model "gpt-4" \
+          --argjson content "$(echo '${{ env.prompt }}' | jq -R .)" \
           '{
             model: $model,
             messages: [{role: "system", content: $content}],
             max_tokens: 1500
           }')
+
           echo "✅ JSON hợp lệ:"
           echo "$JSON_DATA"
 
       - name: Gọi ChatGPT API
         run: |
-          RESPONSE=$(jq -n \
+          JSON_DATA=$(jq -n \
           --arg model "gpt-4" \
-          --arg content "${{ env.prompt }}" \
+          --argjson content "$(echo '${{ env.prompt }}' | jq -R .)" \
           '{
             model: $model,
             messages: [{role: "system", content: $content}],
             max_tokens: 1500
-          }' | curl -s -X POST "https://api.openai.com/v1/chat/completions" \
+          }')
+
+          RESPONSE=$(echo "$JSON_DATA" | curl -s -X POST "https://api.openai.com/v1/chat/completions" \
           -H "Authorization: Bearer $OPENAI_API_KEY" \
           -H "Content-Type: application/json" \
           -d @-)
