@@ -39,6 +39,16 @@ jobs:
         run: |
           echo "🔍 Prompt đang gửi đi: ${{ env.prompt }}"
 
+      - name: Kiểm tra JSON trước khi gửi API
+        run: |
+          jq -n --arg model "gpt-4" \
+          --arg content "${{ env.prompt }}" \
+          '{
+            model: $model,
+            messages: [{role: "system", content: $content}],
+            max_tokens: 1500
+          }'
+
       - name: Gọi ChatGPT API
         run: |
           RESPONSE=$(jq -n \
