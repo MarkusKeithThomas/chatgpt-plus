@@ -44,7 +44,7 @@ jobs:
       - name: Kiểm tra JSON trước khi gửi API
         run: |
           JSON_DATA=$(jq -n \
-          --arg model "gpt-4" \
+          --arg model "gpt-4o" \
           --argjson content "$(echo '${{ env.prompt }}' | jq -R .)" \
           '{
             model: $model,
