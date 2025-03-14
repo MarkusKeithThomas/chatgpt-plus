@@ -14,29 +14,26 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Đọc Prompt từ GitHub
-        id: read_prompt
         run: |
-          PROMPT=$(cat prompts/article_prompt.txt)
-          echo "::set-output name=prompt::$PROMPT"
+          echo "prompt=$(cat prompts/article_prompt.txt)" >> "$GITHUB_ENV"
 
       - name: Gọi ChatGPT API
-        id: chatgpt
         run: |
           RESPONSE=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
           -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
           -H "Content-Type: application/json" \
           -d '{
             "model": "gpt-4",
-            "messages": [{"role": "system", "content": "${{ steps.read_prompt.outputs.prompt }}"}],
+            "messages": [{"role": "system", "content": "${{ env.prompt }}"}],
             "max_tokens": 1500
           }' | jq -r '.choices[0].message.content')
 
-          echo "::set-output name=response::$RESPONSE"
+          echo "response=$RESPONSE" >> "$GITHUB_ENV"
 
       - name: Lưu bài viết vào Markdown
         run: |
           echo "# Đèn năng lượng mặt trời - Bài Viết ChatGPT" > articles/article_$(date '+%Y-%m-%d').md
-          echo "${{ steps.chatgpt.outputs.response }}" >> articles/article_$(date '+%Y-%m-%d').md
+          echo "${{ env.response }}" >> articles/article_$(date '+%Y-%m-%d').md
 
       - name: Commit và Push bài viết
         run: |
